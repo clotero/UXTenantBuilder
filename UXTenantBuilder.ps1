@@ -23,9 +23,20 @@ Write-Output("Console Version: " + $webReturn.ProductVersion)
 # Get the base OG on which we will build the child OG based on the name.
 $groupEndpoint = "/API/system/groups/search"
 $groupID = "td_scotcurry"
-$endpointToCall = $groupEndpoint + "?group_id=" + $groupID
+$endpointToCall = $groupEndpoint + "?groupid=" + $groupID
 $endpointURL = $serverName + $endpointToCall
 $webReturn = Invoke-RestMethod -Method Get -Uri $endpointURL -Headers $headers
-Write-Output ($groupID + "= ID: " + $webReturn.LocationGroups[0].Id.Value)
+$ogReturnJSON = $webReturn | ConvertFrom-Json
 $parentGroupID = $webReturn.LocationGroups[0].Id.Value
 
+# Create child OG
+$tenantName = "Medtronic - UX"
+$localeString = "English (United States) [English (United States)]"
+$ogJSONString = @{Name=$tenantName;GroupID="uxMedtronic";LocationGroupType="Container";Country="United States";AddDefaultLocation="true";EnableRestApiAccess="true";Timezone=2}
+$ogJSON = $ogJSONString | ConvertTo-JSON -Compress
+Write-Output $ogJSON
+$createGroupString = "/API/system/groups/" + $parentGroupID
+$createGroupEndpoint = $serverName + $createGroupString
+Write-Output $createGroupEndpoint
+$webReturn = Invoke-RestMethod -Method Post -Uri $createGroupEndpoint -Headers $headers -Body $ogJSON
+Write-Output $webReturn
