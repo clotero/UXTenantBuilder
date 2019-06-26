@@ -18,7 +18,6 @@ $endpointURL = $serverName + $infoEndpoint
 
 # Get a list of Smart Groups and print them all out.
 $webReturn = Invoke-RestMethod -Method Get -Uri $endpointURL -Headers $headers
-Write-Output("Console Version: " + $webReturn.ProductVersion)
 
 # Get the base OG on which we will build the child OG based on the name.
 $groupEndpoint = "/API/system/groups/search"
@@ -35,17 +34,17 @@ $ogJSONString = @{Name=$tenantName;GroupID="uxMedtronic";LocationGroupType="Cont
 $ogJSON = $ogJSONString | ConvertTo-JSON -Compress
 $createGroupString = "/API/system/groups/" + $parentGroupID
 $createGroupEndpoint = $serverName + $createGroupString
-Write-Output $createGroupEndpoint
 $webReturn = Invoke-RestMethod -Method Post -Uri $createGroupEndpoint -Headers $headers -Body $ogJSON
-Write-Output "Starting Sleep"
-Start-Sleep -Seconds 4
-# Write-Output $webReturn
+$createdOG = $webReturn.Value
 
 # Need to have a role to add to the Admin user.  Hard coding the Console Admin Role for now.
 $roleObject = [PSCustomObject]@{
     Id = 78
+    Uuid = "73ad9b73-2f0a-4019-93df-8fbca3b7639f"
+    Name = "Console Administrator"
+    OrganizationGroupUuid = "725aaf25-085f-4e9f-ae60-4d58187e70da"
     LocationGroup = "VMware scotcurry"
-    LocationGroupId = 10154
+    LocationGroupId = "10154"
 }
 
 # Define admin object to build out admin record
@@ -55,14 +54,35 @@ $adminObject = [PSCustomObject]@{
     FirstName = "Medtronic"
     LastName = "Admin"
     Email = "noereply@vmware.com"
-    Roles = $roleObject
+    Roles = @($roleObject)
 }
 $adminJSON = ConvertTo-Json -InputObject $adminObject -Compress
-Write-Output $adminJSON
 
 $addAdminEndpoint = "/API/system/admins/addadminuser"
 $addAdminUri = $serverName + $addAdminEndpoint
-Write-Output $addAdminUri
 $headers = @{"Authorization" = $encodedUserName; "aw-tenant-code" = $restAPIKey; "Accept" = $contentType; "Content-Type" = $contentType}
-$webReturn = Invoke-RestMethod -Method Put -Uri $addAdminUri -Headers $headers -Body $adminJSON
+$webReturn = Invoke-RestMethod -Method Post -Uri $addAdminUri -Headers $headers -Body $adminJSON
+
+# Add in two users
+$userObject = [PSCustomObject]@{
+    UserName = "MedtronicUser1"
+    Password = "AirWatch1"
+    FirstName = "Medtronic"
+    LastName = "User1"
+    SecurityType = 2
+    Email = "noreply@medtronic.com"
+}
+$userJSON = ConvertTo-Json -InputObject $userObject -Compress
+
+$addUserEndpoint = "/API/system/users/adduser"
+$addUserUri = $serverName + $addUserEndpoint
+$webReturn = Invoke-RestMethod -Method Post -Uri $addUserUri -Headers $headers -Body $userJSON
+
+# For some reason, you need to activate the user after creation.  Just hard-coding this call for now.
+$idToActivate = $webReturn.Value
+$activateEndpoint = "/API/system/users/activate"
+$activateURI = $serverName + $activateEndpoint
+$values = ConvertTo-Json -InputObject $activateBody -Compress
+Write-Output $values
+$webReturn = Invoke-RestMethod -Method Post -Uri $activateURI -Headers $headers -Body $activateUserJSON
 Write-Output $webReturn
