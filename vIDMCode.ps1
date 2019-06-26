@@ -35,18 +35,12 @@ $userUri = $vIDMInstance + $userEndpoint
 $webReturn = Invoke-RestMethod -Method Get -Uri $userUri -Headers $headers
 
 #Create local directory
-$directoryBody = @{
-    type='LOCAL_DIRECTORY'
-    domains=$localDomainName
-    name=$localDirectoryName
-    }
-$jsonBody = $directoryBody | ConvertTo-Json
-Write-Output $jsonBody
+$directoryBody = '{"type":"LOCAL_DIRECTORY","domains":["'+$localDomainName+'"],"name":"'+$localDirectoryName + '"}'
 $directoryEndpoint = "/SAAS/jersey/manager/api/connectormanagement/directoryconfigs"
 $directoryURI = $vIDMInstance + $directoryEndpoint
 $vmwareHorizonConnector = "application/vnd.vmware.horizon.manager.connector.management.directory.local+json"
 $headers = @{"Authorization" = $userAuthToken; "Content-Type" = $vmwareHorizonConnector}
-$webReturn = Invoke-RestMethod -Method Post -Uri $directoryUri -Headers $headers -Body $jsonBody 
+$webReturn = Invoke-RestMethod -Method Post -Uri $directoryUri -Headers $headers -Body $directoryBody 
 
 #Create local users
 
