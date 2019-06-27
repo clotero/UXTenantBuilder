@@ -2,7 +2,7 @@
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 #Tenant information
-$vIDMInstance = "https://clotero.vidmpreview.com"
+$vIDMInstance = "https://cl.vidmpreview.com"
 $acceptType = "application/vnd.vmware.horizon.manager.oauth2client+json"
 $contentType = "application/vnd.vmware.horizon.manager.oauth2client+json"
 
@@ -17,7 +17,7 @@ FirstName = 'John'
 LastName = 'Doe'
 Email = 'jdoe@clotero.com'
 UPN = 'jdoe@clotero.com'
-Passord = 'Password1'
+Password = 'Password1'
 }
 
 $user2 = @{
@@ -26,14 +26,14 @@ FirstName = 'Random'
 LastName = 'User'
 Email = 'ruser@clotero.com'
 UPN = 'ruser@clotero.com'
-Passord = 'Password2'
+Password = 'Password2'
 }
 
 
 # To set this up you need to create a service access token.  The information about how to do this is at:
 # https://github.com/vmware/idm/wiki/Integrating-Client-Credentials-app-with-OAuth2
-$clientID = "CloteroPostMan"
-$sharedSecret = "ky7E4EnY5QVEtNLU05PY1vrevlUKwgRgOsW1Tdng1Vo9C9xw"
+$clientID = "PostMan"
+$sharedSecret = "MYd36zGIPiyNfUoT9OSHFD7oTc2UVFw0qUBQYjymCv1rcBoW"
 $oauthEndpoint = "/SAAS/auth/oauthtoken"
 $contentType = "application/x-www-form-urlencoded"
 
@@ -66,30 +66,42 @@ $webReturn = Invoke-RestMethod -Method Post -Uri $directoryUri -Headers $headers
 
 #Create local users
 
+#Create User 1
 
-$user = $user1
+function Create-vidmUser {
+Param($user)
 $schema = @("urn:scim:schemas:core:1.0","urn:scimschemas:extension:workspace:1.0")
-$userBody = {
-    userName = $user.user
-    "urn:scim:schemas:extension:workspace:1.0" = @{
-        domain = $localDomainName
-    }
-    schemas = $schema
-    password = $user.Passord
-    name = {
-        familyName = $user.LastName;
-        givenName = $user.FirstName
-    }
-    emails = @{
-        
-            value = $user.Email
+$userBody = '{
+    "emails": [
+        {
+            "value": "' + $user.Email + '"
         }
-} | ConvertTo-Json
+    ],
+    "name": {
+        "familyName": "' + $user.LastName + '",
+        "givenName": "' + $user.FirstName + '"
+    },
+    "password": "' + $user.Password + '",
+    "schemas": [
+        "urn:scim:schemas:core:1.0",
+        "urn:scim:schemas:extension:workspace:1.0"
+    ],
+    "urn:scim:schemas:extension:workspace:1.0": {
+        "domain": "' + $localDomainName + '"
+    },
+    "userName": "' + $user.User + '"
+}'
 
-
+$userBody = ConvertFrom-Json $userBody
+$userBody = ConvertTo-Json $userBody
 
 
 $headers = @{"Authorization" = $userAuthToken; "Content-Type" = $applicationJSON; "Accept" = $applicationJSON}
 $webReturn = Invoke-RestMethod -Method Post -Uri $userUri -Headers $headers -Body $userBody
+
+}
+
+Create-vidmUser -user $user1
+Create-vidmUser -user $user2
 
 Write-Output $webReturn
