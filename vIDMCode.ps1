@@ -68,6 +68,8 @@ $webReturn = Invoke-RestMethod -Method Post -Uri $directoryUri -Headers $headers
 
 #Create User 1
 
+$headers = @{"Authorization" = $userAuthToken; "Content-Type" = $applicationJSON; "Accept" = $applicationJSON}
+
 function Create-vidmUser {
 Param($user)
 $schema = @("urn:scim:schemas:core:1.0","urn:scimschemas:extension:workspace:1.0")
@@ -95,13 +97,30 @@ $userBody = '{
 $userBody = ConvertFrom-Json $userBody
 $userBody = ConvertTo-Json $userBody
 
-
-$headers = @{"Authorization" = $userAuthToken; "Content-Type" = $applicationJSON; "Accept" = $applicationJSON}
 $webReturn = Invoke-RestMethod -Method Post -Uri $userUri -Headers $headers -Body $userBody
 
 }
 
 Create-vidmUser -user $user1
 Create-vidmUser -user $user2
+
+#Get access policies
+
+<#$policyEndpoint = "/SAAS/jersey/manager/api/accessPolicies"
+$policyURI = $vIDMInstance + $policyEndpoint
+$policyJSON = "application/vnd.vmware.horizon.manager.accesspolicyset.list+json"
+$headers = @{"Authorization" = $userAuthToken; "Content-Type" = $policyJSON; "Accept" = $policyJSON}
+$policyReturn = Invoke-RestMethod -Method Get -Uri $policyURI -Headers $headers
+
+$policyUUID = $policyReturn.items.uuid[0]#>
+
+#Create application
+
+$catalogEndpoint = "/SAAS/jersey/manager/api/catalogitems"
+
+$samlJSON = "application/vnd.vmware.horizon.manager.catalog.saml20+json"
+$headers = @{"Authorization" = $userAuthToken; "Content-Type" = $samlJSON; "Accept" = $samlJSON}
+
+
 
 Write-Output $webReturn
